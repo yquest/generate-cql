@@ -11,11 +11,13 @@ fun main() {
         simpleField("myField2", SimpleType.Type.TEXT)
         simpleField("myField3", SimpleType.Type.INT)
         simpleField("myField4", SimpleType.Type.TEXT)
-        subTable("#super_a"){
+        subTable("#super_a") {
             simpleField("myField4", SimpleType.Type.TEXT, Field.KeyType.PARTITION)
+            simpleField("myField5", SimpleType.Type.TEXT)
         }
-        subTable("#super_b")
-        subTable("#super_c")
+        subTable("x_#super_b_a")
+        subTable("##super_c")
+        subTable("aa##super_c")
     }
 
     val options = DumperOptions()
@@ -23,6 +25,15 @@ fun main() {
     val yaml = Yaml(options)
 
     val concret = model.concreteTables()
+    concret.forEach {
+        println(it.name)
+    }
+
+    val inStream = object {}.javaClass.getResourceAsStream("/model.yaml")
+
+    val map = yaml.loadAs(inStream, Map::class.java)
+    val fromMapModel:List<Table> = Table.fromMap(map)
+
 
     println(yaml.dumpAsMap(mapOf("tables" to listOf(model.toMap()))))
 }

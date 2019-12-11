@@ -1,2 +1,15 @@
-table:
-  xpto: {xx: xx, pk: true}
+tables:
+  - name: myTable
+    fields:
+      myField1: {type: text}
+      myField2: {type: text}
+      myField3: {type: int}
+      myField4: {type: text}
+    sub:
+      - name: x_#super_b_a
+      - name: '##super_c'
+      - name: aa##super_c
+      - name: '#super_a'
+        fields:
+          myField4: {type: text, key: partition}
+          myField5: {type: text}
