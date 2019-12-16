@@ -33,10 +33,13 @@ fun main() {
         field("myField5", ct2)
         field("myField6", ct3)
         subTable("#super_a") {
-            simpleField("myField4", SimpleType.Type.TEXT, Field.KeyType.PARTITION)
-            simpleField("myField5", SimpleType.Type.TEXT)
+            simpleField("myField4", SimpleType.Type.TEXT, Field.KeyType.PARTITION, 0)
+            simpleField("myField5", SimpleType.Type.TEXT,Field.KeyType.NONE, 2)
         }
-        subTable("x_#super_b_a")
+        subTable("x_#super_b_a"){
+            simpleField("myField4", SimpleType.Type.TEXT, Field.KeyType.PARTITION)
+            simpleField("myField5", SimpleType.Type.TEXT, Field.KeyType.CLUSTER)
+        }
         subTable("##super_c")
         subTable("aa##super_c")
     }
@@ -47,7 +50,7 @@ fun main() {
 
     println("dependencies")
     WithFields.printDependencies(model.dependecies,System.out)
-    //model.dependecies.forEach { println(it.name) }
+    Table.printTables(model.concreteTables(),System.out)
     val concret = model.concreteTables()
     concret.forEach {
         println(it.name)

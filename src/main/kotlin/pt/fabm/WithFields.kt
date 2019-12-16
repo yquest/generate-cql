@@ -24,12 +24,12 @@ interface WithFields {
             return orderDependencies(siblingDependencies)
         }
 
-    fun simpleField(name: String, type: SimpleType.Type, key: Field.KeyType = Field.KeyType.NONE) {
-        fields.add(Field(name, type.asType(), key))
+    fun simpleField(name: String, type: SimpleType.Type, key: Field.KeyType = Field.KeyType.NONE, order:Int = -1) {
+        fields.add(Field(name, type.asType(), key, order))
     }
 
-    fun field(name: String, type: Type, key: Field.KeyType = Field.KeyType.NONE) {
-        fields.add(Field(name, type, key))
+    fun field(name: String, type: Type, key: Field.KeyType = Field.KeyType.NONE, order:Int = -1) {
+        fields.add(Field(name, type, key, order))
     }
 
     companion object {
@@ -49,9 +49,7 @@ interface WithFields {
         }
 
         fun orderDependencies(dependencies: Set<CustomType>): Set<CustomType> {
-
             val all = mutableSetOf<CustomType>()
-
             for (current in dependencies) {
                 if (!all.add(current)) {
                     all.remove(current);
@@ -64,7 +62,6 @@ interface WithFields {
                     }
                 }
             }
-
             return all
         }
     }

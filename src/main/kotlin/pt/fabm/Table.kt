@@ -2,9 +2,8 @@ package pt.fabm
 
 import pt.fabm.types.SimpleType
 import pt.fabm.types.Type
-import java.lang.Appendable
 
-class Table(val name: String):WithFields {
+class Table(val name: String) : WithFields {
     override val fields = mutableListOf<Field>()
     var subTables = mutableListOf<Table>()
     fun toMap(): Map<String, Any> {
@@ -121,7 +120,32 @@ class Table(val name: String):WithFields {
             return tablesList.map(::fromRawToTable)
         }
 
-        fun printTables(tables:List<Table>, appendable: Appendable){
+        fun printTables(tables: List<Table>, appendable: Appendable) {
+            for (table in tables) {
+                val toReorder = table.fields.filter { it.order != -1 }
+                val orderedFields = table.fields.filter { it.order == -1 }.toMutableList()
+                for(fieldToReorder in toReorder){
+                    orderedFields.add(fieldToReorder.order, fieldToReorder)
+                }
+
+                val isSimpleKey = !table.fields.any { it.pkType == Field.KeyType.CLUSTER }
+                appendable.append("${table.name}(\n")
+                val fieldIterator = orderedFields.iterator()
+                while (fieldIterator.hasNext()) {
+                    val field = fieldIterator.next()
+                    val comma = if (fieldIterator.hasNext() || !isSimpleKey) "," else ""
+                    val simpleKey = if (isSimpleKey && field.pkType == Field.KeyType.PARTITION) " primary_key" else ""
+                    appendable.append("  ${field.name}   ${field.type.literalName}$simpleKey$comma\n")
+                }
+                if (!isSimpleKey) {
+                    val pk = table.fields.filter { it.pkType == Field.KeyType.PARTITION }
+                        .joinToString(", ", "(", ")") { it.name }
+                    val keys = listOf(pk) + table.fields.filter { it.pkType == Field.KeyType.CLUSTER }.map { it.name }
+                    appendable.append("  ").append("primary_key")
+                    appendable.append(keys.joinToString(", ", "(", ")")).append('\n')
+                }
+                appendable.append(");\n")
+            }
         }
     }
 
