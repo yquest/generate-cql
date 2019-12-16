@@ -46,7 +46,8 @@ fun main() {
     val yaml = Yaml(options)
 
     println("dependencies")
-    model.dependecies.forEach { println(it.name) }
+    WithFields.printDependencies(model.dependecies,System.out)
+    //model.dependecies.forEach { println(it.name) }
     val concret = model.concreteTables()
     concret.forEach {
         println(it.name)

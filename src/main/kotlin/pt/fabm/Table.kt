@@ -2,6 +2,7 @@ package pt.fabm
 
 import pt.fabm.types.SimpleType
 import pt.fabm.types.Type
+import java.lang.Appendable
 
 class Table(val name: String):WithFields {
     override val fields = mutableListOf<Field>()
@@ -119,6 +120,10 @@ class Table(val name: String):WithFields {
             }
             return tablesList.map(::fromRawToTable)
         }
+
+        fun printTables(tables:List<Table>, appendable: Appendable){
+        }
     }
+
 
 }
