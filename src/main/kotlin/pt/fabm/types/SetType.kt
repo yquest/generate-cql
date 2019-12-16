@@ -1,10 +1,10 @@
-package pt.fabm
+package pt.fabm.types
 
-class SimpleType(val type: Type) : Type {
+class SetType(val type: Type) : Type {
     enum class Type {
         TEXT, INT, UUID, DATE, TIMESTAMP;
 
-        fun asType(): pt.fabm.Type = SimpleType(this)
+        fun asType(): pt.fabm.types.Type = SetType(this)
     }
 
     override val literalName: String get() = type.name.toLowerCase()

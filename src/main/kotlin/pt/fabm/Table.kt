@@ -1,7 +1,10 @@
 package pt.fabm
 
-class Table(val name: String) {
-    val fields: MutableList<Field> = mutableListOf()
+import pt.fabm.types.SimpleType
+import pt.fabm.types.Type
+
+class Table(val name: String):WithFields {
+    override val fields = mutableListOf<Field>()
     var subTables = mutableListOf<Table>()
     fun toMap(): Map<String, Any> {
         val map = hashMapOf<String, Any>()
@@ -20,10 +23,6 @@ class Table(val name: String) {
         val table = Table(name)
         if (init != null) table.init()
         subTables.add(table)
-    }
-
-    fun simpleField(name: String, type: SimpleType.Type, key: Field.KeyType = Field.KeyType.NONE) {
-        fields.add(Field(name, type.asType(), key))
     }
 
     fun concreteTables(): List<Table> {
@@ -77,19 +76,49 @@ class Table(val name: String) {
         }
 
         fun fromMap(map: Map<*, *>): List<Table> {
-            fun fromRawToTable(rawTable: Map<*, *>): Table {
-                @Suppress("UNCHECKED_CAST")
-                (rawTable["fields"] as List<Map<*, *>>).map { rawField ->
-                    TODO("complete fields map")
-                }
-                TODO("complete table map")
+            fun Map<*, *>.getType(): Type = (SimpleType.Type.values().find {
+                it.name == this["type"].toString().toUpperCase()
+            } ?: error("no simple type found")).asType()
+
+            fun Map<*, *>.getKey(): Field.KeyType {
+                if (this["key"] == null) return Field.KeyType.NONE
+                val keyName = this["key"].toString()
+                return Field.KeyType.values().find {
+                    keyName.equals(it.name, true)
+                } ?: error("invalid key $keyName")
             }
 
-            @Suppress("UNCHECKED_CAST")
-            val tablesList: List<Map<*, *>> = map["tables"] as List<Map<*, *>>
-            return tablesList.map { rawTable ->
-                fromRawToTable(rawTable)
+            fun Table.addFields(rawFields: Map<*, *>?) {
+                (rawFields ?: emptyMap<Any, Any>()).forEach { rawField ->
+                    if (rawField.value !is Map<*, *>) error("expect a map")
+                    val fieldEntry = rawField.value as Map<*, *>
+                    val field = Field(rawField.key.toString(), fieldEntry.getType(), fieldEntry.getKey())
+                    this.fields += field
+                }
             }
+
+            fun fromRawToTable(rawTable: Any?): Table {
+                if (rawTable !is Map<*, *>) error("expected a table as a map")
+                val table = Table(rawTable["name"] as String)
+                table.addFields(rawTable["fields"] as Map<*, *>)
+
+                (rawTable["sub"] as List<*>).map { rawSubTable ->
+                    val subTable: Table
+                    if (rawSubTable is Map<*, *>) {
+                        subTable = Table(rawSubTable["name"] as String)
+                        subTable.addFields(rawSubTable["fields"] as Map<*, *>?)
+                        table.subTables.add(subTable)
+                    } else error("sub unexpected format")
+                }
+                return table
+            }
+
+            val tablesList: List<*> = map["tables"].let {
+                if (it !is List<*>) error("wrong format")
+                else it
+            }
+            return tablesList.map(::fromRawToTable)
         }
     }
+
 }

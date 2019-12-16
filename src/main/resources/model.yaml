@@ -1,3 +1,8 @@
+types:
+  - name: myCustomType
+    fields:
+      myCustomField1: {type: text}
+      myCustomField2: {type: timestamp}
 tables:
   - name: myTable
     fields:
@@ -5,6 +10,7 @@ tables:
       myField2: {type: text}
       myField3: {type: int}
       myField4: {type: text}
+
     sub:
       - name: x_#super_b_a
       - name: '##super_c'
