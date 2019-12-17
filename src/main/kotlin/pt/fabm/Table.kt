@@ -6,6 +6,15 @@ import pt.fabm.types.Type
 class Table(val name: String) : WithFields {
     override val fields = mutableListOf<Field>()
     var subTables = mutableListOf<Table>()
+    val orderedFields:List<Field> get() {
+        val toReorder = fields.filter { it.order != -1 }
+        val orderedFields = fields.filter { it.order == -1 }.toMutableList()
+        for(fieldToReorder in toReorder){
+            orderedFields.add(fieldToReorder.order, fieldToReorder)
+        }
+        return orderedFields
+    }
+
     fun toMap(): Map<String, Any> {
         val map = hashMapOf<String, Any>()
         map["name"] = this.name
@@ -122,15 +131,9 @@ class Table(val name: String) : WithFields {
 
         fun printTables(tables: List<Table>, appendable: Appendable) {
             for (table in tables) {
-                val toReorder = table.fields.filter { it.order != -1 }
-                val orderedFields = table.fields.filter { it.order == -1 }.toMutableList()
-                for(fieldToReorder in toReorder){
-                    orderedFields.add(fieldToReorder.order, fieldToReorder)
-                }
-
                 val isSimpleKey = !table.fields.any { it.pkType == Field.KeyType.CLUSTER }
                 appendable.append("${table.name}(\n")
-                val fieldIterator = orderedFields.iterator()
+                val fieldIterator = table.orderedFields.iterator()
                 while (fieldIterator.hasNext()) {
                     val field = fieldIterator.next()
                     val comma = if (fieldIterator.hasNext() || !isSimpleKey) "," else ""
