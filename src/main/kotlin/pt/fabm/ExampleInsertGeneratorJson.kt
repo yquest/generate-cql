@@ -27,11 +27,12 @@ class ExampleInsertGeneratorJson(private val appendable: Appendable) {
         val reident = "  $ident"
         while (fieldsIterator.hasNext()) {
             val field = fieldsIterator.next()
-            appendable.append("$reident\"${field.name}\"").append(" : ")
+            appendable.append("$reident\"${field.name}\"").append(": ")
             generateByType(reident, field.type)
-            if (fieldsIterator.hasNext()) appendable.append(",\n")
+            if (fieldsIterator.hasNext()) appendable.append(",")
+            appendable.append("\n")
         }
-        appendable.append(reident).append("}\n")
+        appendable.append(ident).append("}")
     }
 
     fun generateByType(ident: String, type: Type) {
@@ -50,7 +51,7 @@ class ExampleInsertGeneratorJson(private val appendable: Appendable) {
     }
 
     fun generateMap(ident: String, key: Type, value: Type) {
-        appendable.append("{\"${generateByType("", key)}\" : ${generateByType(ident, value)}}")
+        appendable.append("{\"${generateByType("", key)}\": ${generateByType(ident, value)}}")
     }
 
     fun generateFrozen(ident: String, type: Type) {
@@ -69,6 +70,6 @@ class ExampleInsertGeneratorJson(private val appendable: Appendable) {
             generateByType(ident, field.type)
             appendable.append(comma)
         }
-        appendable.append("'};")
+        appendable.append('\n').append("}';")
     }
 }

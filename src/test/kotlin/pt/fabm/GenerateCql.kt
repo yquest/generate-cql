@@ -1,7 +1,6 @@
 package pt.fabm
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
-import pt.fabm.*
 import pt.fabm.types.CustomType
 import pt.fabm.types.SimpleType
 
