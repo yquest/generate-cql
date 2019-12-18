@@ -1,11 +1,11 @@
 package pt.fabm.types
 
-class SetType(val type: Type) : Type {
-    enum class Type {
-        TEXT, INT, UUID, DATE, TIMESTAMP;
+class SetType(private val type: Type) : CollectionType {
+    override val collectionName: String
+        get() = "set"
+    override val collectionValue: Type
+        get() = type
 
-        fun asType(): pt.fabm.types.Type = SetType(this)
-    }
-
-    override val literalName: String get() = type.name.toLowerCase()
+    override val literalName: String get() = "set<${type.literalName}>"
+    override val map: Map<String, *> get() = mapOf("set" to type.map)
 }

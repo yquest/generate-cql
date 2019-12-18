@@ -24,6 +24,10 @@ interface WithFields {
             return orderDependencies(siblingDependencies)
         }
 
+    fun setField(name: String, type: SimpleType.Type, key: Field.KeyType = Field.KeyType.NONE, order:Int = -1) {
+        fields.add(Field(name, type.asType(), key, order))
+    }
+
     fun simpleField(name: String, type: SimpleType.Type, key: Field.KeyType = Field.KeyType.NONE, order:Int = -1) {
         fields.add(Field(name, type.asType(), key, order))
     }

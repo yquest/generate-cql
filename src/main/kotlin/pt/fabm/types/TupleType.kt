@@ -1,5 +1,8 @@
 package pt.fabm.types
 
-class TupleType(val type: Type) : Type {
-    override val literalName: String get() = "tuple<${type.literalName.toLowerCase()}>"
+class TupleType(val types: List<SimpleType>) : Type {
+    private val literalTypes: String get() = types.map { it.literalName.toLowerCase() }.joinToString(",")
+    override val literalName: String get() = "tuple<${literalTypes}>"
+    override val map: Map<String, *>
+        get() = mapOf("tuple" to listOf(literalTypes))
 }
