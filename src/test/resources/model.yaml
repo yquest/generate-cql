@@ -17,5 +17,5 @@ tables:
       - name: aa##super_c
       - name: '#super_a'
         fields:
-          myField4: {type: text, key: partition}
+          myField4: {type: text, key: partition, order: 0}
           myField5: {type: text}

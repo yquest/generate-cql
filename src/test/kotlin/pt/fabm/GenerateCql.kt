@@ -1,11 +1,10 @@
 package pt.fabm
-
-import org.apache.commons.lang3.RandomStringUtils
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
+import pt.fabm.*
 import pt.fabm.types.CustomType
 import pt.fabm.types.SimpleType
-import kotlin.random.Random
+
 
 fun main() {
 
@@ -65,35 +64,8 @@ fun main() {
 
     println(yaml.dumpAsMap(mapOf("tables" to listOf(model.toMap()))))
 
-    fun printInsert(appendable: Appendable, table: Table) {
+    ExampleInsertGeneratorSingleLine(System.out).generateInsert(concret[0])
+    println()
+    ExampleInsertGeneratorJson(System.out).generateInsert(concret[0])
 
-        val oderedFields = table.orderedFields
-        var fieldsIterator = oderedFields.iterator()
-        appendable.append("insert into ${table.name} (")
-        while (fieldsIterator.hasNext()) {
-            val field = fieldsIterator.next()
-            val comma = if (fieldsIterator.hasNext()) ", " else ""
-            appendable.append("${field.name}$comma")
-        }
-        appendable.append(") into (")
-
-        fieldsIterator = oderedFields.iterator()
-        while (fieldsIterator.hasNext()) {
-            val field = fieldsIterator.next()
-            val comma = if (fieldsIterator.hasNext()) ", " else ""
-            val value = if (field.type is SimpleType) {
-                if (field.type.type == SimpleType.Type.INT || field.type.type == SimpleType.Type.DATE) "${Random.nextInt(
-                    0,
-                    1000
-                )}"
-                else "'${RandomStringUtils.randomAlphabetic(20)}'"
-            } else if (field.type is CustomType) {
-                "'not yet generated'"
-            } else error("type not expected")
-            appendable.append("${value}$comma")
-        }
-        appendable.append(");")
-    }
-
-    printInsert(System.out, concret[0])
 }
