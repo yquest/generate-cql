@@ -48,18 +48,19 @@ fun main() {
     options.defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
     val yaml = Yaml(options)
 
-    println("dependencies")
-    WithFields.printDependencies(model.dependecies, System.out)
-    Table.printTables(model.concreteTables(), System.out)
-    val concret = model.concreteTables()
-    concret.forEach {
-        println(it.name)
-    }
 
     val inStream = object {}.javaClass.getResourceAsStream("/model.yaml")
 
     val map = yaml.loadAs(inStream, Map::class.java)
     val fromMapModel: List<Table> = Table.fromMap(map)
+
+    println("dependencies")
+    WithFields.printDependencies(fromMapModel[0].dependecies, System.out)
+    Table.printTables(fromMapModel[0].concreteTables(), System.out)
+    val concret = model.concreteTables()
+    concret.forEach {
+        println(it.name)
+    }
 
     println(yaml.dumpAsMap(mapOf("tables" to listOf(model.toMap()))))
 

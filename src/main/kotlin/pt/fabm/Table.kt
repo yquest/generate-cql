@@ -97,11 +97,16 @@ class Table(val name: String) : WithFields {
                 } ?: error("invalid key $keyName")
             }
 
+            fun Map<*, *>.getOrder(): Int {
+                if (this["order"] == null) return -1
+                return this["order"].toString().toInt()
+            }
+
             fun Table.addFields(rawFields: Map<*, *>?) {
                 (rawFields ?: emptyMap<Any, Any>()).forEach { rawField ->
                     if (rawField.value !is Map<*, *>) error("expect a map")
                     val fieldEntry = rawField.value as Map<*, *>
-                    val field = Field(rawField.key.toString(), fieldEntry.getType(), fieldEntry.getKey())
+                    val field = Field(rawField.key.toString(), fieldEntry.getType(), fieldEntry.getKey(), fieldEntry.getOrder())
                     this.fields += field
                 }
             }
