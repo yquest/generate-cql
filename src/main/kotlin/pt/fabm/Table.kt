@@ -1,30 +1,39 @@
 package pt.fabm
 
+import pt.fabm.types.CustomType
 import pt.fabm.types.SimpleType
 import pt.fabm.types.Type
 
 class Table(val name: String) : WithFields {
     override val fields = mutableListOf<Field>()
     var subTables = mutableListOf<Table>()
-    val orderedFields:List<Field> get() {
-        val toReorder = fields.filter { it.order != -1 }
-        val orderedFields = fields.filter { it.order == -1 }.toMutableList()
-        for(fieldToReorder in toReorder){
-            orderedFields.add(fieldToReorder.order, fieldToReorder)
+    val orderedFields: List<Field>
+        get() {
+            val toReorder = fields.filter { it.order != -1 }
+            val orderedFields = fields.filter { it.order == -1 }.toMutableList()
+            for (fieldToReorder in toReorder) {
+                orderedFields.add(fieldToReorder.order, fieldToReorder)
+            }
+            return orderedFields
         }
-        return orderedFields
-    }
 
     fun toMap(): Map<String, Any> {
+        fun createCustomMap(field: Field): Pair<String, Any> {
+            val type = field.type
+            val resultMap = if (type !is CustomType) {
+                type.map.toMutableMap()
+            } else {
+                mutableMapOf("custom" to field.type.literalName as Any)
+            }
+            if (field.order != -1)
+                resultMap["order"] = field.order
+            return field.name to resultMap
+        }
+
         val map = hashMapOf<String, Any>()
         map["name"] = this.name
         if (subTables.isNotEmpty()) map["sub"] = subTables.map { it.toMap() }
-        if (fields.isNotEmpty()) map["fields"] = fields.map {
-            val fieldMap = mutableMapOf<String, Any>()
-            fieldMap["type"] = it.type.literalName
-            if (it.pkType != Field.KeyType.NONE) fieldMap["key"] = it.pkType.name.toLowerCase()
-            it.name to fieldMap
-        }.toMap()
+        if (fields.isNotEmpty()) map["fields"] = fields.map(::createCustomMap).toMap()
         return map
     }
 
@@ -106,7 +115,8 @@ class Table(val name: String) : WithFields {
                 (rawFields ?: emptyMap<Any, Any>()).forEach { rawField ->
                     if (rawField.value !is Map<*, *>) error("expect a map")
                     val fieldEntry = rawField.value as Map<*, *>
-                    val field = Field(rawField.key.toString(), fieldEntry.getType(), fieldEntry.getKey(), fieldEntry.getOrder())
+                    val field =
+                        Field(rawField.key.toString(), fieldEntry.getType(), fieldEntry.getKey(), fieldEntry.getOrder())
                     this.fields += field
                 }
             }
@@ -149,7 +159,7 @@ class Table(val name: String) : WithFields {
                     val pk = table.fields.filter { it.pkType == Field.KeyType.PARTITION }
                         .joinToString(", ", "(", ")") { it.name }
                     val keys = listOf(pk) + table.fields.filter { it.pkType == Field.KeyType.CLUSTER }.map { it.name }
-                    appendable.append("  ").append("primary_key")
+                    appendable.append("  ").append("primary key")
                     appendable.append(keys.joinToString(", ", "(", ")")).append('\n')
                 }
                 appendable.append(");\n")

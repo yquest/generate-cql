@@ -5,9 +5,9 @@ import pt.fabm.WithFields
 
 class CustomType(val name: String) : Type, WithFields {
     override val literalName: String get() = name
-    override val map: Map<String, *>
+    override val map: Map<String, Any>
         get() {
-            val map = hashMapOf<String, Any>()
+            val map = mutableMapOf<String, Any>()
             map["name"] = this.name
             if (fields.isNotEmpty()) map["fields"] = fields.map {
                 val fieldMap = mutableMapOf<String, Any>()
@@ -23,10 +23,10 @@ class CustomType(val name: String) : Type, WithFields {
     override val fields: MutableList<Field> = mutableListOf()
 
     companion object {
-        fun fromYaml(types: List<CustomType>, map: Map<*, *>): CustomType? {
-            val type = map["custom"]
-            if (type == null) return null
-            return types.find { it.name == type.toString() }
+        fun fromYaml(types: List<CustomType>, typeSupplier: (String) -> Any?): CustomType? {
+            val customName = (typeSupplier("custom") ?: return null)
+                .let { if (it is String) it else null } ?: return null
+            return types.find { it.name == customName } ?: return null
         }
 
         fun name(name: String, init: CustomType.() -> Unit): CustomType {

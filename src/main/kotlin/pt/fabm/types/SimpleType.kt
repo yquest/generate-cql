@@ -2,10 +2,10 @@ package pt.fabm.types
 
 class SimpleType(val type: Type) : Type {
     companion object {
-        fun fromYaml(map: Map<*, *>): SimpleType? {
-            val type = map["key"]
-            if (type == null) return null
-            else return fromString(type.toString())
+
+        fun fromYaml(keyProvider:(String)->Any?):SimpleType?{
+            val key = keyProvider("key")?: return null
+            return fromString(key.toString())
         }
 
         fun fromString(string: String): SimpleType {
@@ -21,5 +21,5 @@ class SimpleType(val type: Type) : Type {
     }
 
     override val literalName: String get() = type.name.toLowerCase()
-    override val map: Map<String, *> get() = mapOf("type" to literalName)
+    override val map: Map<String, Any> get() = mapOf("type" to literalName)
 }

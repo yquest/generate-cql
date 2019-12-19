@@ -3,23 +3,22 @@ package pt.fabm.types
 interface CollectionType : Type {
     val collectionName: String
     val collectionValue: Type
-    override val map :Map<String, *> get() = mapOf(collectionName to collectionValue)
+    override val map: Map<String, Any> get() = mapOf(collectionName to collectionValue)
 
     companion object {
-        fun toCollectionType(map: Map<*, *>): CollectionType? {
-            val type = listOf("set", "list").find { map.containsKey(it) } ?: return null
-            fun createType(): Type {
-                val value = map[type]
-                return if (value is String) SimpleType.fromString(value)
-                else if (value is Map<*, *>) Type.fromYaml(value)
-                else throw error("no way!")
+        fun toCollectionType(typeSupplier: (String) -> Any?): CollectionType? {
+            for (current in listOf("set", "list")) {
+                val simple = (current.let { typeSupplier(it) } ?: continue)
+                    .let { if (it is String) it else null } ?: return null
 
+                val value = SimpleType.fromString(simple)
+
+                when (current) {
+                    "set" -> return SetType(value)
+                    "list" -> return ListType(value)
+                }
             }
-            when (type) {
-                "set" -> return SetType(createType())
-                "list" -> return ListType(createType())
-                else -> throw error("what??!!")
-            }
+            return null
         }
     }
 }
