@@ -11,11 +11,13 @@ class CustomType(val name: String) : Type, WithFields {
             map["name"] = this.name
             if (fields.isNotEmpty()) map["fields"] = fields.map {
                 val fieldMap = mutableMapOf<String, Any>()
-                if (it.type is SimpleType) fieldMap["type"] = it.type.literalName
-                else if (it.type is CustomType) fieldMap["custom"] = it.type.literalName
-                else if (it.type is CollectionType) fieldMap[it.type.collectionName] =
-                    it.type.collectionValue.literalName
-                else throw error("impossible to map type")
+                when (it.type) {
+                    is SimpleType -> fieldMap["type"] = it.type.literalName
+                    is CustomType -> fieldMap["custom"] = it.type.literalName
+                    is CollectionType -> fieldMap[it.type.collectionName] =
+                        it.type.collectionValue.literalName
+                    else -> throw error("impossible to map type")
+                }
                 it.name to fieldMap
             }.toMap()
             return map

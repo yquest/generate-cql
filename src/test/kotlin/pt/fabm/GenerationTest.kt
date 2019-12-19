@@ -72,30 +72,29 @@ class GenerationTest {
             simpleField("myField1", SimpleType.Type.TEXT)
             simpleField("myField2", SimpleType.Type.TIMESTAMP)
             simpleField("myField3", SimpleType.Type.INT)
-            simpleField("myField4", SimpleType.Type.TEXT)
+            simpleField("myField4", SimpleType.Type.DATE)
             field("myField5", ct2)
-            field("myField6", ct3,Field.KeyType.NONE,2)
+            field("myField6", ct3, Field.KeyType.NONE, 2)
             subTable("#super_a") {
                 simpleField("myField4", SimpleType.Type.TEXT, Field.KeyType.PARTITION, 0)
-                simpleField("myField5", SimpleType.Type.TEXT, Field.KeyType.NONE, 2)
+                simpleField("myField5", SimpleType.Type.TEXT, Field.KeyType.CLUSTER, 1)
             }
-            subTable("x_#super_b_a") {
+            subTable("=super_b") {
                 simpleField("myField4", SimpleType.Type.TEXT, Field.KeyType.PARTITION)
                 simpleField("myField5", SimpleType.Type.TEXT, Field.KeyType.CLUSTER)
             }
         }
 
+        val map = mapOf(
+            "types" to model.dependecies.map { it.map },
+            "tables" to listOf(model.toMap())
+        )
+
+
         val options = DumperOptions()
         options.defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
         val yaml = Yaml(options)
 
-        println(
-            yaml.dumpAsMap(
-                mapOf(
-                    "dependencies" to model.dependecies.map { it.map },
-                    "tables" to listOf(model.toMap())
-                )
-            )
-        )
+        println(yaml.dumpAsMap(map))
     }
 }

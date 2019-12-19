@@ -2,11 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/generate-cql.iml" filepath="$PROJECT_DIR$/.idea/modules/generate-cql.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/generate-cql.main.iml" filepath="$PROJECT_DIR$/.idea/modules/generate-cql.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/generate-cql.test.iml" filepath="$PROJECT_DIR$/.idea/modules/generate-cql.test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/pt.fabm.generate-cql.iml" filepath="$PROJECT_DIR$/.idea/modules/pt.fabm.generate-cql.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/pt.fabm.generate-cql.main.iml" filepath="$PROJECT_DIR$/.idea/modules/pt.fabm.generate-cql.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/pt.fabm.generate-cql.test.iml" filepath="$PROJECT_DIR$/.idea/modules/pt.fabm.generate-cql.test.iml" />
     </modules>
   </component>
 </project>
