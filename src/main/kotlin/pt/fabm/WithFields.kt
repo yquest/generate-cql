@@ -1,8 +1,6 @@
 package pt.fabm
 
-import pt.fabm.types.CustomType
-import pt.fabm.types.SimpleType
-import pt.fabm.types.Type
+import pt.fabm.types.*
 
 interface WithFields {
     val fields: MutableList<Field>
@@ -24,16 +22,21 @@ interface WithFields {
             return orderDependencies(siblingDependencies)
         }
 
-    fun setField(name: String, type: SimpleType.Type, key: Field.KeyType = Field.KeyType.NONE, order:Int = -1) {
+    fun setField(name: String, type: SimpleType.Type, key: Field.KeyType = Field.KeyType.NONE, order: Int = -1) {
+        fields.add(Field(name, SetType(type.asType()), key, order))
+    }
+
+    fun simpleField(name: String, type: SimpleType.Type, key: Field.KeyType = Field.KeyType.NONE, order: Int = -1) {
         fields.add(Field(name, type.asType(), key, order))
     }
 
-    fun simpleField(name: String, type: SimpleType.Type, key: Field.KeyType = Field.KeyType.NONE, order:Int = -1) {
-        fields.add(Field(name, type.asType(), key, order))
-    }
-
-    fun field(name: String, type: Type, key: Field.KeyType = Field.KeyType.NONE, order:Int = -1) {
+    fun field(name: String, type: Type, key: Field.KeyType = Field.KeyType.NONE, order: Int = -1) {
         fields.add(Field(name, type, key, order))
+    }
+
+
+    fun MapField(name: String, type: Pair<Type, Type>, key: Field.KeyType = Field.KeyType.NONE, order: Int = -1) {
+        fields.add(Field(name, MapType(type.first, type.second), key, order))
     }
 
     companion object {

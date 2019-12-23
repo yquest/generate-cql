@@ -1,10 +1,7 @@
 package pt.fabm
 
 import org.apache.commons.lang3.RandomStringUtils
-import pt.fabm.types.CustomType
-import pt.fabm.types.MapType
-import pt.fabm.types.SimpleType
-import pt.fabm.types.Type
+import pt.fabm.types.*
 import java.util.*
 import kotlin.random.Random
 
@@ -14,49 +11,63 @@ class ExampleInsertGeneratorSingleLine(private val appendable: Appendable) {
         val integerType = type.type == SimpleType.Type.DATE ||
                 type.type == SimpleType.Type.INT
 
-        if (integerType) appendable.append(Random.nextInt(0, 10000).toString())
-        else if (type.type == SimpleType.Type.TEXT)
-            appendable.append("'${RandomStringUtils.randomAlphanumeric(30)}'")
-        else if (type.type == SimpleType.Type.UUID) appendable.append(UUID.randomUUID().toString())
-        else throw error("not defined yet generation")
+        when {
+            integerType -> appendable.append(Random.nextInt(0, 10000).toString())
+            type.type == SimpleType.Type.TEXT -> appendable.append("'${RandomStringUtils.randomAlphanumeric(30)}'")
+            type.type == SimpleType.Type.UUID -> appendable.append(UUID.randomUUID().toString())
+            type.type == SimpleType.Type.TIMESTAMP -> appendable.append(Random.nextInt(0, 10000).toString())
+            else -> throw error("not defined yet generation")
+        }
     }
 
     fun generateByCustomType(customType: CustomType) {
         appendable.append("{")
         val fieldsIterator = customType.fields.iterator()
-        while (fieldsIterator.hasNext()){
+        while (fieldsIterator.hasNext()) {
             val field = fieldsIterator.next()
             appendable.append(field.name).append(" : ")
             generateByType(field.type)
-            if(fieldsIterator.hasNext()) appendable.append(", ")
+            if (fieldsIterator.hasNext()) appendable.append(", ")
         }
         appendable.append("}")
     }
 
     fun generateByType(type: Type) {
-        if (type is SimpleType) generateSimpleType(type)
-        else if (type is MapType) generateMap(type.key, type.value)
-        else if (type is CustomType) generateByCustomType(type)
-        else error("type not defined yet")
+        when (type) {
+            is SimpleType -> generateSimpleType(type)
+            is MapType -> generateMap(type.key, type.value)
+            is SetType -> generateSet(type.collectionValue)
+            is ListType -> generateList(type.collectionValue)
+            is CustomType -> generateByCustomType(type)
+            else -> error("type not defined yet")
+        }
     }
 
     fun generateSet(element: Type) {
-        appendable.append("{${generateByType(element)},${generateByType(element)}}")
+        appendable.append("{")
+        generateByType(element)
+        appendable.append("}")
     }
 
     fun generateList(element: Type) {
-        appendable.append("[${generateByType(element)},${generateByType(element)}]")
+        appendable.append("[")
+        generateByType(element)
+        appendable.append("]")
     }
 
     fun generateMap(key: Type, value: Type) {
-        appendable.append("{${generateByType(key)} : ${generateByType(value)}}")
+        appendable.append("{")
+        generateByType(key)
+        appendable.append(": ")
+        generateByType(value)
+        appendable.append("}")
     }
 
-    fun generateFrozen(type: Type){
+    fun generateFrozen(type: Type) {
         generateByType(type)
     }
 
-    fun generateInsert(table:Table){
+    fun generateInsert(table: Table) {
         val oderedFields = table.orderedFields
         var fieldsIterator = oderedFields.iterator()
         appendable.append("insert into ${table.name} (")
