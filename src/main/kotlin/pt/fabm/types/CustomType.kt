@@ -5,7 +5,8 @@ import pt.fabm.WithFields
 
 class CustomType(val name: String) : Type, WithFields {
     override val literalName: String get() = name
-    override val map: Map<String, Any>
+    override val entry:Pair<String,String> get() = "custom" to name
+    val map: Map<String, Any>
         get() {
             val map = mutableMapOf<String, Any>()
             map["name"] = this.name

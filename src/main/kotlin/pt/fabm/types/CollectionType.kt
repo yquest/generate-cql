@@ -3,7 +3,7 @@ package pt.fabm.types
 interface CollectionType : Type {
     val collectionName: String
     val collectionValue: Type
-    override val map: Map<String, Any> get() = mapOf(collectionName to collectionValue)
+    override val entry: Pair<String, Any> get() = collectionName to collectionValue
 
     companion object {
         fun toCollectionType(typeSupplier: (String) -> Any?): CollectionType? {

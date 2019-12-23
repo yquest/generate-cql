@@ -12,10 +12,10 @@ tables:
       myField4: {type: text}
 
     sub:
-      - name: x_#super_b_a
-      - name: '##super_c'
-      - name: aa##super_c
-      - name: '#super_a'
+      - name: x_=super_b_a
+      - name: ==super_c
+      - name: aa==super_c
+      - name: =super_a
         fields:
           myField4: {type: text, key: partition, order: 0}
           myField5: {type: text}

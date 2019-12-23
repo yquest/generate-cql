@@ -3,7 +3,7 @@ package pt.fabm.types
 interface Type {
 
     val literalName: String
-    val map: Map<String, Any>
+    val entry: Pair<String, Any>
     fun asFrozen(): FrozenType = FrozenType(this)
 
     companion object {

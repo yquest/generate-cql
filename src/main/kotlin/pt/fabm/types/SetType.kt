@@ -7,5 +7,5 @@ class SetType(private val type: Type) : CollectionType {
         get() = type
 
     override val literalName: String get() = "set<${type.literalName}>"
-    override val map: Map<String, Any> get() = mapOf("set" to type.map)
+    override val entry: Pair<String, Any> get() = "set" to type.entry
 }

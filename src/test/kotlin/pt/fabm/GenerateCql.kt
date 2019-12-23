@@ -1,4 +1,5 @@
 package pt.fabm
+
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
 import pt.fabm.types.CustomType
@@ -32,16 +33,16 @@ fun main() {
         simpleField("myField4", SimpleType.Type.TEXT)
         field("myField5", ct2)
         field("myField6", ct3)
-        subTable("#super_a") {
+        subTable("=super_a") {
             simpleField("myField4", SimpleType.Type.TEXT, Field.KeyType.PARTITION, 0)
             simpleField("myField5", SimpleType.Type.TEXT, Field.KeyType.NONE, 2)
         }
-        subTable("x_#super_b_a") {
+        subTable("x_=super_b_a") {
             simpleField("myField4", SimpleType.Type.TEXT, Field.KeyType.PARTITION)
             simpleField("myField5", SimpleType.Type.TEXT, Field.KeyType.CLUSTER)
         }
-        subTable("##super_c")
-        subTable("aa##super_c")
+        subTable("==super_c")
+        subTable("aa==super_c")
     }
 
     val options = DumperOptions()

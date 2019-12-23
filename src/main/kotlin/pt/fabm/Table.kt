@@ -18,22 +18,11 @@ class Table(val name: String) : WithFields {
         }
 
     fun toMap(): Map<String, Any> {
-        fun createCustomMap(field: Field): Pair<String, Any> {
-            val type = field.type
-            val resultMap = if (type !is CustomType) {
-                type.map.toMutableMap()
-            } else {
-                mutableMapOf("custom" to field.type.literalName as Any)
-            }
-            if (field.order != -1)
-                resultMap["order"] = field.order
-            return field.name to resultMap
-        }
 
         val map = hashMapOf<String, Any>()
         map["name"] = this.name
         if (subTables.isNotEmpty()) map["sub"] = subTables.map { it.toMap() }
-        if (fields.isNotEmpty()) map["fields"] = fields.map(::createCustomMap).toMap()
+        if (fields.isNotEmpty()) map["fields"] = fields.map(Field::toPairMap).toMap()
         return map
     }
 
@@ -85,6 +74,27 @@ class Table(val name: String) : WithFields {
             }
         }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Table
+
+        if (name != other.name) return false
+        if (fields != other.fields) return false
+        if (subTables != other.subTables) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = name.hashCode()
+        result = 31 * result + fields.hashCode()
+        result = 31 * result + subTables.hashCode()
+        return result
+    }
+
 
     companion object {
         fun name(name: String, init: Table.() -> Unit): Table {
