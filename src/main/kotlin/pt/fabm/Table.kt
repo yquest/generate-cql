@@ -1,8 +1,6 @@
 package pt.fabm
 
 import pt.fabm.types.CustomType
-import pt.fabm.types.SimpleType
-import pt.fabm.types.Type
 
 class Table(val name: String) : WithFields {
     override val fields = mutableListOf<Field>()
@@ -36,12 +34,12 @@ class Table(val name: String) : WithFields {
         fun renderSubName(current: String): String {
             val sb = StringBuilder()
             var mark = 0
-            val superString = "#super"
+            val superString = "=super"
             var index = current.indexOf(superString)
             if (index == -1) return current
 
             do {
-                if (index > 0 && current[index - 1] == '#') {
+                if (index > 0 && current[index - 1] == '=') {
                     sb.append(current.substring(mark, index - 1))
                     sb.append(superString)
                 } else {
@@ -103,40 +101,34 @@ class Table(val name: String) : WithFields {
             return table
         }
 
-        fun fromMap(map: Map<*, *>): List<Table> {
-            fun Map<*, *>.getType(): Type = (SimpleType.Type.values().find {
-                it.name == this["type"].toString().toUpperCase()
-            } ?: error("no simple type found")).asType()
+        fun createModel(list: List<Table>): Map<String, List<Map<String, Any>>> {
+            return mapOf(
+                "types" to list.flatMap { it.dependecies }.toSet().map { it.map },
+                "tables" to list.map { it.toMap() }
+            )
+        }
 
-            fun Map<*, *>.getKey(): Field.KeyType {
-                if (this["key"] == null) return Field.KeyType.NONE
-                val keyName = this["key"].toString()
-                return Field.KeyType.values().find {
-                    keyName.equals(it.name, true)
-                } ?: error("invalid key $keyName")
-            }
-
-            fun Map<*, *>.getOrder(): Int {
-                if (this["order"] == null) return -1
-                return this["order"].toString().toInt()
-            }
-
-            fun Table.addFields(rawFields: Map<*, *>?) {
-                (rawFields ?: emptyMap<Any, Any>()).forEach { rawField ->
-                    if (rawField.value !is Map<*, *>) error("expect a map")
-                    val fieldEntry = rawField.value as Map<*, *>
-                    val field =
-                        Field(rawField.key.toString(), fieldEntry.getType(), fieldEntry.getKey(), fieldEntry.getOrder())
-                    this.fields += field
-                }
+        fun fromSupplier(types: List<CustomType>, supplier: (String) -> Any?): List<Table> {
+            fun Table.addFields(rawFields: Any?) {
+                if (rawFields !is Map<*, *>?)
+                    throw error("expected a map")
+                (rawFields ?: emptyMap<Any, Any?>()).entries
+                    .map { it.key.toString() to it.value }
+                    .map { if (it.second == null) error("expect a map") else it.first to it.second!! }
+                    .map {
+                        Field.fromSupplier(it.first, it.second, types)
+                    }
+                    .let { fields.addAll(it) }
             }
 
             fun fromRawToTable(rawTable: Any?): Table {
                 if (rawTable !is Map<*, *>) error("expected a table as a map")
                 val table = Table(rawTable["name"] as String)
                 table.addFields(rawTable["fields"] as Map<*, *>)
+                val subList = rawTable["sub"]
+                if (subList !is List<*>) throw error("expected a list")
 
-                (rawTable["sub"] as List<*>).map { rawSubTable ->
+                subList.map { rawSubTable ->
                     val subTable: Table
                     if (rawSubTable is Map<*, *>) {
                         subTable = Table(rawSubTable["name"] as String)
@@ -147,11 +139,12 @@ class Table(val name: String) : WithFields {
                 return table
             }
 
-            val tablesList: List<*> = map["tables"].let {
-                if (it !is List<*>) error("wrong format")
-                else it
-            }
-            return tablesList.map(::fromRawToTable)
+            val typesRaw = supplier("types") ?: throw error("types not present")
+            if (typesRaw !is List<*>) throw error("types is not a list")
+            val tablesRaw = supplier("tables") ?: throw error("types not present")
+            if (tablesRaw !is List<*>) throw error("tables is not a list")
+
+            return tablesRaw.map(::fromRawToTable)
         }
 
         fun printTables(tables: List<Table>, appendable: Appendable) {
@@ -162,7 +155,7 @@ class Table(val name: String) : WithFields {
                 while (fieldIterator.hasNext()) {
                     val field = fieldIterator.next()
                     val comma = if (fieldIterator.hasNext() || !isSimpleKey) "," else ""
-                    val simpleKey = if (isSimpleKey && field.pkType == Field.KeyType.PARTITION) " primary_key" else ""
+                    val simpleKey = if (isSimpleKey && field.pkType == Field.KeyType.PARTITION) " primary key" else ""
                     appendable.append("  ${field.name}   ${field.type.literalName}$simpleKey$comma\n")
                 }
                 if (!isSimpleKey) {
@@ -176,6 +169,4 @@ class Table(val name: String) : WithFields {
             }
         }
     }
-
-
 }

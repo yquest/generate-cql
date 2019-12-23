@@ -3,8 +3,8 @@ package pt.fabm.types
 class SimpleType(val type: Type) : Type {
     companion object {
 
-        fun fromYaml(keyProvider:(String)->Any?):SimpleType?{
-            val key = keyProvider("key")?: return null
+        fun fromYaml(keyProvider: (String) -> Any?): SimpleType? {
+            val key = keyProvider("type") ?: return null
             return fromString(key.toString())
         }
 

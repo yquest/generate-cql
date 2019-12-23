@@ -1,8 +1,7 @@
 package pt.fabm
 
+import org.junit.Assert
 import org.junit.Test
-import org.yaml.snakeyaml.DumperOptions
-import org.yaml.snakeyaml.Yaml
 import pt.fabm.types.CustomType
 import pt.fabm.types.SimpleType
 
@@ -34,7 +33,7 @@ class GenerationTest {
             simpleField("myField4", SimpleType.Type.DATE)
             field("myField5", ct2)
             field("myField6", ct3, Field.KeyType.NONE, 2)
-            subTable("#super_a") {
+            subTable("=super_a") {
                 simpleField("myField4", SimpleType.Type.TEXT, Field.KeyType.PARTITION, 0)
                 simpleField("myField5", SimpleType.Type.TEXT, Field.KeyType.CLUSTER, 1)
             }

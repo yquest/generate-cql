@@ -53,7 +53,7 @@ fun main() {
     val inStream = object {}.javaClass.getResourceAsStream("/model.yaml")
 
     val map = yaml.loadAs(inStream, Map::class.java)
-    val fromMapModel: List<Table> = Table.fromMap(map)
+    val fromMapModel: List<Table> = Table.fromSupplier(listOf(ct1, ct2, ct3)) { map[it] }
 
     println("dependencies")
     WithFields.printDependencies(fromMapModel[0].dependecies, System.out)

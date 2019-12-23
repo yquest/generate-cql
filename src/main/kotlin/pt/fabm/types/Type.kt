@@ -8,7 +8,10 @@ interface Type {
 
     companion object {
 
-        fun fromYaml(typeSupplier: (entry:String)->Any?, customTypes: List<CustomType> = emptyList()): Type =
+        fun fromSupplier(
+            customTypes: List<CustomType> = emptyList(),
+            typeSupplier: (entry: String) -> Any?
+        ): Type =
             SimpleType.fromYaml(typeSupplier) ?:
             CollectionType.toCollectionType(typeSupplier) ?:
             CustomType.fromYaml(customTypes, typeSupplier) ?:
