@@ -1,25 +1,12 @@
 package pt.fabm
 
-import org.apache.commons.lang3.RandomStringUtils
-import pt.fabm.types.CustomType
-import pt.fabm.types.MapType
-import pt.fabm.types.SimpleType
-import pt.fabm.types.Type
-import java.util.*
-import kotlin.random.Random
+import pt.fabm.types.*
 
-class ExampleInsertGeneratorJson(private val appendable: Appendable) {
-
-    fun generateSimpleType(type: SimpleType) {
-        val integerType = type.type == SimpleType.Type.DATE ||
-                type.type == SimpleType.Type.INT
-
-        if (integerType) appendable.append(Random.nextInt(0, 10000).toString())
-        else if (type.type == SimpleType.Type.TEXT)
-            appendable.append("\"${RandomStringUtils.randomAlphanumeric(30)}\"")
-        else if (type.type == SimpleType.Type.UUID) appendable.append("\"${UUID.randomUUID()}\"")
-        else throw error("not defined yet generation")
-    }
+class ExampleInsertGeneratorJson(
+    private val appendable: Appendable,
+    private val collectionRepetition: () -> Boolean = { false },
+    private val generator: (SimpleType) -> String
+) {
 
     fun generateByCustomType(ident: String, customType: CustomType) {
         appendable.append("{\n")
@@ -36,22 +23,44 @@ class ExampleInsertGeneratorJson(private val appendable: Appendable) {
     }
 
     fun generateByType(ident: String, type: Type) {
-        if (type is SimpleType) generateSimpleType(type)
-        else if (type is MapType) generateMap(ident, type.key, type.value)
-        else if (type is CustomType) generateByCustomType(ident, type)
-        else error("type not defined yet")
+        when (type) {
+            is SimpleType -> appendable.append(generator(type))
+            is CollectionType -> generateCollection(ident, type.collectionValue)
+            is MapType -> generateMap(ident, type.key, type.value)
+            is CustomType -> generateByCustomType(ident, type)
+            else -> error("type not defined yet")
+        }
     }
 
     fun generateCollection(ident: String, element: Type) {
-        appendable.append("[${generateByType(ident, element)}]")
-    }
-
-    fun generateList(ident: String, element: Type) {
-        appendable.append("[${generateByType(ident, element)},${generateByType(ident, element)}]")
+        var repetition: Boolean
+        appendable.append("[")
+        do {
+            generateByType(ident, element)
+            repetition = collectionRepetition()
+            if (repetition) appendable.append(", ")
+        } while (repetition)
+        appendable.append("]")
     }
 
     fun generateMap(ident: String, key: Type, value: Type) {
-        appendable.append("{\"${generateByType("", key)}\": ${generateByType(ident, value)}}")
+        val reident = "  $ident"
+        var repetition: Boolean
+        appendable.append("{")
+        do {
+            appendable.append('\n')
+            appendable.append(reident)
+            if (key is SimpleType)
+                appendable.append(generator(key))
+            else
+                appendable.append(generator(SimpleType.Type.TEXT.asType()))
+            appendable.append(": ")
+
+            generateByType(reident, value)
+            repetition = collectionRepetition()
+            if (repetition) appendable.append(",")
+        } while (repetition)
+        appendable.append('\n').append(ident).append("}")
     }
 
     fun generateFrozen(ident: String, type: Type) {
@@ -59,10 +68,10 @@ class ExampleInsertGeneratorJson(private val appendable: Appendable) {
     }
 
     fun generateInsert(table: Table) {
-        val oderedFields = table.orderedFields
-        var fieldsIterator = oderedFields.iterator()
+        val orderedFields = table.orderedFields
+        val fieldsIterator = orderedFields.iterator()
         appendable.append("insert into ${table.name} json '{\n")
-        val ident="  "
+        val ident = "  "
         while (fieldsIterator.hasNext()) {
             val field = fieldsIterator.next()
             val comma = if (fieldsIterator.hasNext()) ",\n" else ""

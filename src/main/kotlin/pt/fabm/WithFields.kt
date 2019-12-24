@@ -35,7 +35,7 @@ interface WithFields {
     }
 
 
-    fun MapField(name: String, type: Pair<Type, Type>, key: Field.KeyType = Field.KeyType.NONE, order: Int = -1) {
+    fun mapField(name: String, type: Pair<Type, Type>, key: Field.KeyType = Field.KeyType.NONE, order: Int = -1) {
         fields.add(Field(name, MapType(type.first, type.second), key, order))
     }
 
@@ -59,13 +59,13 @@ interface WithFields {
             val all = mutableSetOf<CustomType>()
             for (current in dependencies) {
                 if (!all.add(current)) {
-                    all.remove(current);
-                    all.add(current);
+                    all.remove(current)
+                    all.add(current)
                 }
                 for (child in current.dependecies) {
                     if (!all.add(child)) {
-                        all.remove(child);
-                        all.add(child);
+                        all.remove(child)
+                        all.add(child)
                     }
                 }
             }
