@@ -1,26 +1,15 @@
 package pt.fabm
 
 import org.apache.commons.lang3.RandomStringUtils
-import pt.fabm.types.CustomType
-import pt.fabm.types.MapType
-import pt.fabm.types.SimpleType
-import pt.fabm.types.Type
+import pt.fabm.types.*
 import java.util.*
 import kotlin.random.Random
 
-class ExampleInsertGeneratorJson(private val appendable: Appendable) {
-
-    fun generateSimpleType(type: SimpleType) {
-        val integerType = type.type == SimpleType.Type.DATE ||
-                type.type == SimpleType.Type.INT
-
-        if (integerType) appendable.append(Random.nextInt(0, 10000).toString())
-        else if (type.type == SimpleType.Type.TEXT)
-            appendable.append("\"${RandomStringUtils.randomAlphanumeric(30)}\"")
-        else if (type.type == SimpleType.Type.UUID) appendable.append("\"${UUID.randomUUID()}\"")
-        else throw error("not defined yet generation")
-    }
-
+class ExampleInsertGeneratorJson(
+    private val appendable: Appendable,
+    private val simpleGenerator: (Boolean, SimpleType) -> String = ::generateSimple,
+    private val repeatInCollection: () -> Boolean = { false }
+) {
     fun generateByCustomType(ident: String, customType: CustomType) {
         appendable.append("{\n")
         val fieldsIterator = customType.fields.iterator()
@@ -36,33 +25,48 @@ class ExampleInsertGeneratorJson(private val appendable: Appendable) {
     }
 
     fun generateByType(ident: String, type: Type) {
-        if (type is SimpleType) generateSimpleType(type)
+        if (type is SimpleType) appendable.append(simpleGenerator(false, type))
         else if (type is MapType) generateMap(ident, type.key, type.value)
         else if (type is CustomType) generateByCustomType(ident, type)
+        else if (type is FrozenType) generateFrozen(ident, type)
+        else if (type is CollectionType) generateCollection(ident, type)
         else error("type not defined yet")
     }
 
-    fun generateCollection(ident: String, element: Type) {
-        appendable.append("[${generateByType(ident, element)}]")
-    }
-
-    fun generateList(ident: String, element: Type) {
-        appendable.append("[${generateByType(ident, element)},${generateByType(ident, element)}]")
+    fun generateCollection(ident: String, type: CollectionType) {
+        appendable.append("[")
+        do {
+            val repeat = repeatInCollection()
+            generateByType(ident, type.collectionValue)
+            if (repeat) appendable.append(',')
+        } while (repeat)
+        appendable.append("]")
     }
 
     fun generateMap(ident: String, key: Type, value: Type) {
+        appendable.append('{').append('"')
+        do {
+            val repeat = repeatInCollection()
+            if (key is SimpleType) appendable.append('"')
+                .append(simpleGenerator(true, key))
+                .append('"')
+            else throw error("expected simple type")
+            generateByType(ident, value)
+            if (repeat) appendable.append(',')
+        } while (repeat)
+        appendable.append('"').append('}')
         appendable.append("{\"${generateByType("", key)}\": ${generateByType(ident, value)}}")
     }
 
-    fun generateFrozen(ident: String, type: Type) {
-        generateByType(ident, type)
+    fun generateFrozen(ident: String, type: FrozenType) {
+        generateByType(ident, type.type)
     }
 
     fun generateInsert(table: Table) {
         val oderedFields = table.orderedFields
-        var fieldsIterator = oderedFields.iterator()
+        val fieldsIterator = oderedFields.iterator()
         appendable.append("insert into ${table.name} json '{\n")
-        val ident="  "
+        val ident = "  "
         while (fieldsIterator.hasNext()) {
             val field = fieldsIterator.next()
             val comma = if (fieldsIterator.hasNext()) ",\n" else ""
@@ -71,5 +75,34 @@ class ExampleInsertGeneratorJson(private val appendable: Appendable) {
             appendable.append(comma)
         }
         appendable.append('\n').append("}';")
+    }
+
+    companion object {
+        fun applySimple(text: String, type: SimpleType): String {
+            return when (type.type) {
+                SimpleType.Type.DATE -> '"' + text + '"'
+                SimpleType.Type.TIMESTAMP -> '"' + text + '"'
+                SimpleType.Type.INT -> text
+                SimpleType.Type.TEXT -> '"' + text + '"'
+                SimpleType.Type.UUID -> '"' + text + '"'
+            }
+        }
+
+        fun generateSimple(rawMode: Boolean, type: SimpleType): String {
+            fun randomInt() = Random.nextInt(0, 10000).toString()
+            fun randomText() = RandomStringUtils.randomAlphanumeric(30)
+            fun randomUUID() = UUID.randomUUID().toString()
+
+            val fn = when (type.type) {
+                SimpleType.Type.DATE -> ::randomInt
+                SimpleType.Type.TIMESTAMP -> ::randomInt
+                SimpleType.Type.INT -> ::randomInt
+                SimpleType.Type.TEXT -> ::randomText
+                SimpleType.Type.UUID -> ::randomUUID
+            }
+
+            return if (rawMode) fn()
+            else applySimple(fn(), type)
+        }
     }
 }

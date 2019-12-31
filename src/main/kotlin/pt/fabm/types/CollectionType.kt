@@ -8,14 +8,16 @@ interface CollectionType : Type {
     companion object {
         fun toCollectionType(typeSupplier: (String) -> Any?): CollectionType? {
             for (current in listOf("set", "list")) {
-                val simple = (current.let { typeSupplier(it) } ?: continue)
-                    .let { if (it is String) it else null } ?: return null
+                val rawField = (typeSupplier(current) ?: continue)
+                    .let { if(it !is Map<*,*>)throw error("expected map") else it }
 
-                val value = SimpleType.fromString(simple)
+                val type = Type.fromSupplier {
+                    rawField[it]
+                }
 
                 when (current) {
-                    "set" -> return SetType(value)
-                    "list" -> return ListType(value)
+                    "set" -> return SetType(type)
+                    "list" -> return ListType(type)
                 }
             }
             return null

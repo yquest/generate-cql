@@ -9,12 +9,13 @@ interface Type {
     companion object {
 
         fun fromSupplier(
-            customTypes: List<CustomType> = emptyList(),
+            customTypes: Iterable<CustomType> = emptyList(),
             typeSupplier: (entry: String) -> Any?
         ): Type =
             SimpleType.fromYaml(typeSupplier) ?:
             CollectionType.toCollectionType(typeSupplier) ?:
-            CustomType.fromYaml(customTypes, typeSupplier) ?:
-                throw error("type not expected")
+            CustomType.fromYaml(customTypes,typeSupplier) ?:
+            FrozenType.fromYaml(customTypes,typeSupplier) ?:
+            throw error("type not expected")
     }
 }

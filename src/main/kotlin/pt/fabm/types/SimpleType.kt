@@ -38,5 +38,9 @@ class SimpleType(val type: Type) : Type {
         return type.hashCode()
     }
 
+    override fun toString(): String {
+        return "SimpleType(type=$type)"
+    }
+
 
 }

@@ -9,7 +9,7 @@ class Field(val name: String, val type: Type, val pkType: KeyType = KeyType.NONE
     }
 
     companion object {
-        fun fromSupplier(name: String, fieldRaw: Any, types: List<CustomType>): Field {
+        fun fromSupplier(name: String, fieldRaw: Any, types: Iterable<CustomType>): Field {
             if (fieldRaw !is Map<*, *>) error("expect a map")
 
             val type = Type.fromSupplier(types) {fieldRaw[it]}
@@ -18,10 +18,12 @@ class Field(val name: String, val type: Type, val pkType: KeyType = KeyType.NONE
                 if (it is Int) it else error("Int expected")
             }
             val key = fieldRaw["key"].let {
-                if (it == null) KeyType.NONE
-                else if (it !is String) error("Expected String")
-                else KeyType.values().find { keyType -> it.toUpperCase() == keyType.name }
-                    ?: error("key $it invalid")
+                when (it) {
+                    null -> KeyType.NONE
+                    !is String -> error("Expected String")
+                    else -> KeyType.values().find { keyType -> it.toUpperCase() == keyType.name }
+                        ?: error("key $it invalid")
+                }
             }
             return Field(name, type, key, order)
         }
@@ -58,5 +60,10 @@ class Field(val name: String, val type: Type, val pkType: KeyType = KeyType.NONE
         result = 31 * result + order
         return result
     }
+
+    override fun toString(): String {
+        return "Field(name='$name', type=$type, pkType=$pkType, order=$order)"
+    }
+
 
 }

@@ -6,9 +6,30 @@ interface WithFields {
     val fields: MutableList<Field>
     val dependecies: Set<CustomType>
         get() {
+            fun resolveDependencies(field:Field):Iterable<CustomType>{
+                return when(val type = field.type){
+                    is CustomType -> listOf(type)
+                    is CollectionType -> {
+                        val collectionType = type.collectionValue
+                        return if(collectionType is CustomType) listOf(collectionType)
+                        else emptyList()
+                    }
+                    is FrozenType -> {
+                        val frozen = type.type
+                        return if(frozen is CustomType) listOf(frozen)
+                        else emptyList()
+                    }
+                    is MapType -> {
+                        val value = type.value
+                        return if(value is CustomType) listOf(value)
+                        else emptyList()
+                    }
+                    else -> emptyList()
+                }
+            }
+
             val siblingDependencies = fields
-                .map { it.type }
-                .filterIsInstance<CustomType>()
+                .flatMap(::resolveDependencies)
                 .toSet()
 
             val all = mutableSetOf<CustomType>()
@@ -34,8 +55,12 @@ interface WithFields {
         fields.add(Field(name, type, key, order))
     }
 
+    fun frozen(name: String, type: Type, key: Field.KeyType = Field.KeyType.NONE, order: Int = -1) {
+        fields.add(Field(name, FrozenType(type), key, order))
+    }
 
-    fun MapField(name: String, type: Pair<Type, Type>, key: Field.KeyType = Field.KeyType.NONE, order: Int = -1) {
+
+    fun mapField(name: String, type: Pair<Type, Type>, key: Field.KeyType = Field.KeyType.NONE, order: Int = -1) {
         fields.add(Field(name, MapType(type.first, type.second), key, order))
     }
 

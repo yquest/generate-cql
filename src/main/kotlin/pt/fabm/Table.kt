@@ -2,7 +2,7 @@ package pt.fabm
 
 import pt.fabm.types.CustomType
 
-class Table(val name: String) : WithFields {
+class Table(val name: String) : WithFields,DDLAble {
     override val fields = mutableListOf<Field>()
     var subTables = mutableListOf<Table>()
     val orderedFields: List<Field>
@@ -73,6 +73,29 @@ class Table(val name: String) : WithFields {
         }
     }
 
+    override fun printDDL(appendable: java.lang.Appendable) {
+        appendable.append("create table ")
+        val isSimpleKey = fields.filter {
+            it.pkType == Field.KeyType.PARTITION || it.pkType == Field.KeyType.CLUSTER
+        }.size < 2
+        appendable.append("${name}(\n")
+        val fieldIterator = orderedFields.iterator()
+        while (fieldIterator.hasNext()) {
+            val field = fieldIterator.next()
+            val comma = if (fieldIterator.hasNext() || !isSimpleKey) "," else ""
+            val simpleKey = if (isSimpleKey && field.pkType == Field.KeyType.PARTITION) " primary key" else ""
+            appendable.append("  ${field.name}   ${field.type.literalName}$simpleKey$comma\n")
+        }
+        if (!isSimpleKey) {
+            val pk = fields.filter { it.pkType == Field.KeyType.PARTITION }
+                .joinToString(", ", "(", ")") { it.name }
+            val keys = listOf(pk) + fields.filter { it.pkType == Field.KeyType.CLUSTER }.map { it.name }
+            appendable.append("  ").append("primary key")
+            appendable.append(keys.joinToString(", ", "(", ")")).append('\n')
+        }
+        appendable.append(");\n")
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -93,6 +116,9 @@ class Table(val name: String) : WithFields {
         return result
     }
 
+    override fun toString(): String {
+        return "Table(name='$name', fields=$fields, subTables=$subTables)"
+    }
 
     companion object {
         fun name(name: String, init: Table.() -> Unit): Table {
@@ -101,14 +127,12 @@ class Table(val name: String) : WithFields {
             return table
         }
 
-        fun createModel(list: List<Table>): Map<String, List<Map<String, Any>>> {
-            return mapOf(
-                "types" to list.flatMap { it.dependecies }.toSet().map { it.map },
-                "tables" to list.map { it.toMap() }
-            )
-        }
+        fun fromSupplier(supplier: (String) -> Any?): List<Table> {
 
-        fun fromSupplier(types: List<CustomType>, supplier: (String) -> Any?): List<Table> {
+            val typesRaw = supplier("types") ?: throw error("types not present")
+            if (typesRaw !is List<*>) throw error("types is not a list")
+            val types = CustomType.fromYaml(typesRaw as Map<*, *>)
+
             fun Table.addFields(rawFields: Any?) {
                 if (rawFields !is Map<*, *>?)
                     throw error("expected a map")
@@ -139,34 +163,10 @@ class Table(val name: String) : WithFields {
                 return table
             }
 
-            val typesRaw = supplier("types") ?: throw error("types not present")
-            if (typesRaw !is List<*>) throw error("types is not a list")
             val tablesRaw = supplier("tables") ?: throw error("types not present")
             if (tablesRaw !is List<*>) throw error("tables is not a list")
 
             return tablesRaw.map(::fromRawToTable)
-        }
-
-        fun printTables(tables: List<Table>, appendable: Appendable) {
-            for (table in tables) {
-                val isSimpleKey = !table.fields.any { it.pkType == Field.KeyType.CLUSTER }
-                appendable.append("${table.name}(\n")
-                val fieldIterator = table.orderedFields.iterator()
-                while (fieldIterator.hasNext()) {
-                    val field = fieldIterator.next()
-                    val comma = if (fieldIterator.hasNext() || !isSimpleKey) "," else ""
-                    val simpleKey = if (isSimpleKey && field.pkType == Field.KeyType.PARTITION) " primary key" else ""
-                    appendable.append("  ${field.name}   ${field.type.literalName}$simpleKey$comma\n")
-                }
-                if (!isSimpleKey) {
-                    val pk = table.fields.filter { it.pkType == Field.KeyType.PARTITION }
-                        .joinToString(", ", "(", ")") { it.name }
-                    val keys = listOf(pk) + table.fields.filter { it.pkType == Field.KeyType.CLUSTER }.map { it.name }
-                    appendable.append("  ").append("primary key")
-                    appendable.append(keys.joinToString(", ", "(", ")")).append('\n')
-                }
-                appendable.append(");\n")
-            }
         }
     }
 }
