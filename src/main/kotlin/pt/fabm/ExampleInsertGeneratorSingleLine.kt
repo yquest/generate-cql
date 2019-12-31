@@ -1,24 +1,12 @@
 package pt.fabm
 
-import org.apache.commons.lang3.RandomStringUtils
 import pt.fabm.types.*
-import java.util.*
-import kotlin.random.Random
 
-class ExampleInsertGeneratorSingleLine(private val appendable: Appendable) {
-
-    fun generateSimpleType(type: SimpleType) {
-        val integerType = type.type == SimpleType.Type.DATE ||
-                type.type == SimpleType.Type.INT
-
-        when {
-            integerType -> appendable.append(Random.nextInt(0, 10000).toString())
-            type.type == SimpleType.Type.TEXT -> appendable.append("'${RandomStringUtils.randomAlphanumeric(30)}'")
-            type.type == SimpleType.Type.UUID -> appendable.append(UUID.randomUUID().toString())
-            type.type == SimpleType.Type.TIMESTAMP -> appendable.append(Random.nextInt(0, 10000).toString())
-            else -> throw error("not defined yet generation")
-        }
-    }
+class ExampleInsertGeneratorSingleLine(
+    private val appendable: Appendable,
+    private val collectionRepetition: () -> Boolean = { false },
+    private val generator: (SimpleType) -> String
+) {
 
     fun generateByCustomType(customType: CustomType) {
         appendable.append("{")
@@ -34,7 +22,7 @@ class ExampleInsertGeneratorSingleLine(private val appendable: Appendable) {
 
     fun generateByType(type: Type) {
         when (type) {
-            is SimpleType -> generateSimpleType(type)
+            is SimpleType -> appendable.append(generator(type))
             is MapType -> generateMap(type.key, type.value)
             is SetType -> generateSet(type.collectionValue)
             is ListType -> generateList(type.collectionValue)
@@ -44,22 +32,37 @@ class ExampleInsertGeneratorSingleLine(private val appendable: Appendable) {
     }
 
     fun generateSet(element: Type) {
+        var repetition: Boolean
         appendable.append("{")
-        generateByType(element)
+        do {
+            generateByType(element)
+            repetition = collectionRepetition()
+            if(repetition) appendable.append(", ")
+        } while (repetition)
         appendable.append("}")
     }
 
     fun generateList(element: Type) {
+        var repetition: Boolean
         appendable.append("[")
-        generateByType(element)
+        do {
+            generateByType(element)
+            repetition = collectionRepetition()
+            if(repetition) appendable.append(", ")
+        } while (repetition)
         appendable.append("]")
     }
 
     fun generateMap(key: Type, value: Type) {
+        var repetition: Boolean
         appendable.append("{")
-        generateByType(key)
-        appendable.append(": ")
-        generateByType(value)
+        do {
+            generateByType(key)
+            appendable.append(": ")
+            generateByType(value)
+            repetition = collectionRepetition()
+            if(repetition) appendable.append(", ")
+        } while (repetition)
         appendable.append("}")
     }
 

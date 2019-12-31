@@ -64,8 +64,8 @@ fun main() {
 
     println(yaml.dumpAsMap(mapOf("tables" to listOf(model.toMap()))))
 
-    ExampleInsertGeneratorSingleLine(System.out).generateInsert(concret[0])
+    ExampleInsertGeneratorSingleLine(System.out, { false }, SimpleTypeGenerator.JSON).generateInsert(concret[0])
     println()
-    ExampleInsertGeneratorJson(System.out).generateInsert(concret[0])
+    ExampleInsertGeneratorJson(System.out, { false }, SimpleTypeGenerator.JSON).generateInsert(concret[0])
 
 }
