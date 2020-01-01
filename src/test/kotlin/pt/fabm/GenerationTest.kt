@@ -61,9 +61,10 @@ class GenerationTest {
     }
 
     @Test
-    fun testInsertGen() {
+    fun testPrepareStatementsGen() {
+        val myField1 = "myField1"
         val model = Table.name("myTable") {
-            simpleField("myField1", SimpleType.Type.TEXT, Field.KeyType.PARTITION)
+            simpleField(myField1, SimpleType.Type.TEXT, Field.KeyType.PARTITION)
             simpleField("myField2", SimpleType.Type.TIMESTAMP)
             simpleField("myField3", SimpleType.Type.INT)
             simpleField("myField4", SimpleType.Type.DATE)
@@ -71,9 +72,22 @@ class GenerationTest {
         }
 
         val sb = StringBuilder()
-        InsertPSGeneration(sb).generatePS(model)
+        val psGeneration = PSGeneration(model,sb)
+        psGeneration.generateInsert()
         Assert.assertEquals(
             "insert into myTable (myField1, myField2, myField3, myField4, mySetField1) into (?,?,?,?,?);",
+            sb.toString()
+        )
+        sb.clear()
+        psGeneration.generateSelect(listOf(myField1))
+        Assert.assertEquals(
+            "select myField1, myField2, myField3, myField4, mySetField1 from myTable where myField1=?;",
+            sb.toString()
+        )
+        sb.clear()
+        psGeneration.generateSelect()
+        Assert.assertEquals(
+            "select myField1, myField2, myField3, myField4, mySetField1 from myTable;",
             sb.toString()
         )
     }
