@@ -1,7 +1,7 @@
 package pt.fabm
 
-class PSGeneration (private val table:Table,private val appendable: Appendable){
-    fun generateInsert(){
+class PSGeneration(private val table: Table, private val appendable: Appendable) {
+    fun generateInsert() {
         val oderedFields = table.orderedFields
         var fieldsIterator = oderedFields.iterator()
         appendable.append("insert into ").append(table.name).append(" (")
@@ -24,10 +24,10 @@ class PSGeneration (private val table:Table,private val appendable: Appendable){
         appendable.append(");")
     }
 
-    fun generateSelect(checkFields:List<String> = emptyList(), postfix:()->String = {""}){
+    fun generateSelect(fromJson: Boolean = false, checkFields: Iterable<String> = emptyList()) {
         val oderedFields = table.orderedFields
         val fieldsIterator = oderedFields.iterator()
-        appendable.append("select ")
+        appendable.append("select ").append(if (fromJson) " json " else "")
 
         while (fieldsIterator.hasNext()) {
             val field = fieldsIterator.next()
@@ -37,14 +37,8 @@ class PSGeneration (private val table:Table,private val appendable: Appendable){
 
         appendable.append(" from ").append(table.name)
 
-        if(checkFields.isEmpty()) {
-            appendable.append(';')
-            return
-        }
-
-        appendable.append(" where ")
-
         val checkFieldsIterator = checkFields.iterator()
+        if (checkFieldsIterator.hasNext()) appendable.append(" where ")
 
         while (checkFieldsIterator.hasNext()) {
             val field = checkFieldsIterator.next()
@@ -53,7 +47,44 @@ class PSGeneration (private val table:Table,private val appendable: Appendable){
             appendable.append("=?")
             appendable.append(andClause)
         }
-        appendable.append(postfix())
+        appendable.append(";")
+    }
+
+    fun generateUpdate(toSet: Iterable<String>, clause: Iterable<String>) {
+        val toSetIterator = toSet.iterator()
+        appendable.append("update ").append(table.name).append(" set ")
+
+        while (toSetIterator.hasNext()) {
+            val field = toSetIterator.next()
+            val separator = if (toSetIterator.hasNext()) " and " else ""
+            appendable.append(field).append("=?").append(separator)
+        }
+
+        val clauseIterator = clause.iterator()
+        if (clauseIterator.hasNext()) appendable.append(" where ")
+        else error("clause fields must be filled")
+
+        while (clauseIterator.hasNext()) {
+            val field = clauseIterator.next()
+            val separator = if (clauseIterator.hasNext()) " and " else ""
+            appendable.append(field).append("=?").append(separator)
+        }
+
+        appendable.append(";")
+    }
+
+    fun generateDelete(clause: Iterable<String>) {
+        val clauseIterator = clause.iterator()
+        if (!clauseIterator.hasNext()) throw error("no clause defined to delete")
+        appendable.append("delete from ")
+            .append(table.name)
+            .append(" where ")
+        while (clauseIterator.hasNext()) {
+            val field = clauseIterator.next()
+            val separator = if (clauseIterator.hasNext()) " and " else ""
+            appendable.append(field).append("=?").append(separator)
+        }
+
         appendable.append(";")
     }
 }

@@ -16,6 +16,7 @@ class CustomType(val name: String) : Type, WithFields, DDLAble {
                 when (it.type) {
                     is SimpleType -> fieldMap["type"] = it.type.literalName
                     is CustomType -> fieldMap["custom"] = it.type.literalName
+                    is FrozenType -> fieldMap["frozen"] = it.type.entry.second
                     is CollectionType -> fieldMap[it.type.collectionName] =
                         it.type.collectionValue.literalName
                     else -> throw error("impossible to map type")

@@ -4,49 +4,9 @@ import org.junit.Assert
 import org.junit.Test
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
-import pt.fabm.types.CustomType
 import pt.fabm.types.SimpleType
 
 class GenerationTest {
-
-    private val ct1
-        get() = CustomType.name("myCustomType1") {
-            simpleField("ctf11", SimpleType.Type.TEXT)
-            simpleField("ctf12", SimpleType.Type.TEXT)
-        }
-    private val ct2
-        get() = CustomType.name("myCustomType2") {
-            simpleField("ctf21", SimpleType.Type.TEXT)
-            simpleField("ctf22", SimpleType.Type.TEXT)
-            field("ctf23", ct1)
-        }
-
-    private val ct3
-        get() = CustomType.name("myCustomType3") {
-            simpleField("ctf31", SimpleType.Type.TEXT)
-            simpleField("ctf32", SimpleType.Type.TEXT)
-            field("ctf33", ct2)
-        }
-    private val defaultTable
-        get() = Table.name("myTable") {
-            simpleField("myField1", SimpleType.Type.TEXT)
-            simpleField("myField2", SimpleType.Type.TIMESTAMP)
-            simpleField("myField3", SimpleType.Type.INT)
-            simpleField("myField4", SimpleType.Type.DATE)
-            frozen("frozen5", ct1)
-            setField("mySetField1", SimpleType.Type.TEXT)
-            frozen("myField5", ct2)
-            frozen("myField6", ct3, Field.KeyType.NONE, 2)
-            subTable("=super_a") {
-                simpleField("myField4", SimpleType.Type.TEXT, Field.KeyType.PARTITION, 0)
-                simpleField("myField5", SimpleType.Type.TEXT, Field.KeyType.CLUSTER, 1)
-            }
-            subTable("=super_b") {
-                simpleField("myField4", SimpleType.Type.TEXT, Field.KeyType.PARTITION)
-            }
-
-        }
-
 
     @Test
     fun testModelMap() {
@@ -62,39 +22,42 @@ class GenerationTest {
 
     @Test
     fun testPrepareStatementsGen() {
-        val myField1 = "myField1"
-        val model = Table.name("myTable") {
-            simpleField(myField1, SimpleType.Type.TEXT, Field.KeyType.PARTITION)
-            simpleField("myField2", SimpleType.Type.TIMESTAMP)
-            simpleField("myField3", SimpleType.Type.INT)
-            simpleField("myField4", SimpleType.Type.DATE)
-            setField("mySetField1", SimpleType.Type.TEXT)
+        val table = Table.name(DDLConst.name) {
+            simpleField(FieldConst.myField1, SimpleType.Type.TEXT, Field.KeyType.PARTITION)
+            simpleField(FieldConst.myField2, SimpleType.Type.TIMESTAMP)
+            simpleField(FieldConst.myField3, SimpleType.Type.INT)
+            simpleField(FieldConst.myField4, SimpleType.Type.DATE)
+            setField(FieldConst.mySetField1, SimpleType.Type.TEXT)
         }
-
         val sb = StringBuilder()
-        val psGeneration = PSGeneration(model,sb)
+        val psGeneration = PSGeneration(table, sb)
         psGeneration.generateInsert()
         Assert.assertEquals(
-            "insert into myTable (myField1, myField2, myField3, myField4, mySetField1) into (?,?,?,?,?);",
+            "insert into my_table (my_field1, my_field2, my_field3, my_field4, my_set_field1) into (?,?,?,?,?);",
             sb.toString()
         )
         sb.clear()
-        psGeneration.generateSelect(listOf(myField1))
+        psGeneration.generateSelect(false, listOf(FieldConst.myField1))
         Assert.assertEquals(
-            "select myField1, myField2, myField3, myField4, mySetField1 from myTable where myField1=?;",
+            "select my_field1, my_field2, my_field3, my_field4, my_set_field1 from my_table where my_field1=?;",
             sb.toString()
         )
         sb.clear()
         psGeneration.generateSelect()
         Assert.assertEquals(
-            "select myField1, myField2, myField3, myField4, mySetField1 from myTable;",
+            "select my_field1, my_field2, my_field3, my_field4, my_set_field1 from my_table;",
+            sb.toString()
+        )
+        sb.clear()
+        psGeneration.generateUpdate(listOf(FieldConst.mySetField1), listOf(FieldConst.myField1))
+        Assert.assertEquals(
+            "update my_table set my_set_field1=? where my_field1=?;",
             sb.toString()
         )
     }
 
     @Test
     fun testInsertExampleGen() {
-
         val sb = StringBuilder()
         var counter = 4
         fun doCount(): Boolean {
@@ -113,7 +76,7 @@ class GenerationTest {
             simpleGenerator = ::generate
         ).generateInsert(defaultTable)
 
-        Assert.assertEquals(expectedJsonExample, sb.toString())
+        Assert.assertEquals(expectedInsertJsonExample, sb.toString())
     }
 
     @Test
@@ -135,7 +98,6 @@ class GenerationTest {
         val model = Model.fromSupplier { map[it] }
 
         Assert.assertEquals(modelExpected, model)
-
     }
 
     @Test
@@ -150,25 +112,12 @@ class GenerationTest {
     fun testDDLTable2PartitionKeys() {
         val table = defaultTable
         table.fields.let {
-            it += Field("myPk1", SimpleType.Type.TEXT.asType(), Field.KeyType.PARTITION, 0)
-            it += Field("myPk2", SimpleType.Type.TEXT.asType(), Field.KeyType.PARTITION, 1)
+            it += Field("my_pk2", SimpleType.Type.TEXT.asType(), Field.KeyType.PARTITION, 0)
         }
         val sb = StringBuilder()
         table.printDDL(sb)
 
         Assert.assertEquals(expectedDDL2PartitionKeys, sb.toString())
-    }
-
-    @Test
-    fun testDDLTable1PartitionKey() {
-        val table = defaultTable
-        table.fields.let {
-            it += Field("myPk1", SimpleType.Type.TEXT.asType(), Field.KeyType.PARTITION, 0)
-        }
-        val sb = StringBuilder()
-        table.printDDL(sb)
-
-        Assert.assertEquals(expectedDDL1PartitionKey, sb.toString())
     }
 
     @Test
@@ -180,8 +129,5 @@ class GenerationTest {
         concreteTables[0].printDDL(sb)
 
         Assert.assertEquals(expectedDDLConcreteTable1, sb.toString())
-
     }
-
-
 }

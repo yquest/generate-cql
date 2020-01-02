@@ -1,153 +1,236 @@
 package pt.fabm
 
+import pt.fabm.types.CustomType
+import pt.fabm.types.SimpleType
+
+object FieldConst {
+    const val myField1 = "my_field1"
+    const val myField2 = "my_field2"
+    const val myField3 = "my_field3"
+    const val myField4 = "my_field4"
+    const val myField5 = "my_field5"
+    const val myField6 = "my_field6"
+    const val mySetField1 = "my_set_field1"
+    const val frozenField = "frozen_field"
+    const val ct11 = "ct11"
+    const val ct12 = "ct12"
+    const val ct21 = "ct21"
+    const val ct22 = "ct22"
+    const val ct23 = "ct23"
+    const val ct31 = "ct31"
+    const val ct32 = "ct32"
+    const val ct33 = "ct33"
+}
+
+object DDLConst {
+    const val name = "my_table"
+    const val myCustomType1 = "my_custom_type1"
+    const val myCustomType2 = "my_custom_type2"
+    const val myCustomType3 = "my_custom_type3"
+}
+
+val ct1
+    get() = CustomType.name(DDLConst.myCustomType1) {
+        simpleField(FieldConst.ct11, SimpleType.Type.TEXT)
+        simpleField(FieldConst.ct12, SimpleType.Type.TEXT)
+    }
+val ct2
+    get() = CustomType.name(DDLConst.myCustomType2) {
+        simpleField(FieldConst.ct21, SimpleType.Type.TEXT)
+        simpleField(FieldConst.ct22, SimpleType.Type.TEXT)
+        frozen(FieldConst.ct23, ct1)
+    }
+
+val ct3
+    get() = CustomType.name(DDLConst.myCustomType3) {
+        simpleField(FieldConst.ct31, SimpleType.Type.TEXT)
+        simpleField(FieldConst.ct32, SimpleType.Type.TEXT)
+        frozen(FieldConst.ct33, ct2)
+    }
+val defaultTable
+    get() = Table.name(DDLConst.name) {
+        simpleField(FieldConst.myField1, SimpleType.Type.TEXT, Field.KeyType.PARTITION)
+        simpleField(FieldConst.myField2, SimpleType.Type.TIMESTAMP)
+        simpleField(FieldConst.myField3, SimpleType.Type.INT)
+        simpleField(FieldConst.myField4, SimpleType.Type.DATE)
+        frozen(FieldConst.frozenField, ct1)
+        setField(FieldConst.mySetField1, SimpleType.Type.TEXT)
+        frozen(FieldConst.myField5, ct2)
+        frozen(FieldConst.myField6, ct3, Field.KeyType.NONE, 2)
+        subTable("=super_a") {
+            simpleField(FieldConst.myField1, SimpleType.Type.TEXT)
+            simpleField(FieldConst.myField4, SimpleType.Type.TEXT, Field.KeyType.PARTITION, 0)
+            simpleField(FieldConst.myField5, SimpleType.Type.TEXT, Field.KeyType.CLUSTER, 1)
+        }
+        subTable("=super_b") {
+            simpleField(FieldConst.myField4, SimpleType.Type.TEXT, Field.KeyType.PARTITION)
+        }
+
+    }
+
 val expectedSerialization = """
 types:
-- name: myCustomType1
+- name: my_custom_type1
   fields:
-    ctf11:
+    ct11:
       type: text
-    ctf12:
+    ct12:
       type: text
-- name: myCustomType2
+- name: my_custom_type2
   fields:
-    ctf21:
+    ct21:
       type: text
-    ctf22:
+    ct22:
       type: text
-    ctf23:
-      custom: myCustomType1
-- name: myCustomType3
+    ct23:
+      frozen:
+        custom: my_custom_type1
+- name: my_custom_type3
   fields:
-    ctf31:
+    ct31:
       type: text
-    ctf32:
+    ct32:
       type: text
-    ctf33:
-      custom: myCustomType2
+    ct33:
+      frozen:
+        custom: my_custom_type2
 tables:
 - sub:
   - name: =super_a
     fields:
-      myField4:
+      my_field1:
+        type: text
+      my_field4:
         type: text
         order: 0
         key: partition
-      myField5:
+      my_field5:
         type: text
         order: 1
         key: cluster
   - name: =super_b
     fields:
-      myField4:
+      my_field4:
         type: text
         key: partition
-  name: myTable
+  name: my_table
   fields:
-    myField1:
+    my_field1:
       type: text
-    myField2:
+      key: partition
+    my_field2:
       type: timestamp
-    myField3:
+    my_field3:
       type: int
-    myField4:
+    my_field4:
       type: date
-    frozen5:
+    frozen_field:
       frozen:
-        custom: myCustomType1
-    mySetField1:
+        custom: my_custom_type1
+    my_set_field1:
       set:
         type: text
-    myField5:
+    my_field5:
       frozen:
-        custom: myCustomType2
-    myField6:
+        custom: my_custom_type2
+    my_field6:
       frozen:
-        custom: myCustomType3
+        custom: my_custom_type3
       order: 2
 
     """.trimIndent()
 val expectedDDL1PartitionKey = """
-create table myTable(
-  myPk1   text primary key,
-  myField1   text,
-  myField2   timestamp,
-  myField6   frozen<mycustomtype3>,
-  myField3   int,
-  myField4   date,
-  frozen5   frozen<mycustomtype1>,
-  mySetField1   set<text>,
-  myField5   frozen<mycustomtype2>
+create table my_table(
+  my_pk1   text primary key,
+  my_field1   text,
+  my_field2   timestamp,
+  my_field6   frozen<my_custom_type3>,
+  my_field3   int,
+  my_field4   date,
+  frozen_field   frozen<my_custom_type1>,
+  my_set_field1   set<text>,
+  my_field5   frozen<my_custom_type2>
 );
 
 """.trimIndent()
 val expectedDDL2PartitionKeys = """
-create table myTable(
-  myPk1   text,
-  myPk2   text,
-  myField1   text,
-  myField2   timestamp,
-  myField6   frozen<mycustomtype3>,
-  myField3   int,
-  myField4   date,
-  frozen5   frozen<mycustomtype1>,
-  mySetField1   set<text>,
-  myField5   frozen<mycustomtype2>,
-  primary key((myPk1, myPk2))
+create table my_table(
+  my_pk2   text,
+  my_field1   text,
+  my_field2   timestamp,
+  my_field6   frozen<my_custom_type3>,
+  my_field3   int,
+  my_field4   date,
+  frozen_field   frozen<my_custom_type1>,
+  my_set_field1   set<text>,
+  my_field5   frozen<my_custom_type2>,
+  primary key((my_field1, my_pk2))
 );
 
 """.trimIndent()
 val expectedDDLType = """
-create type myCustomType3(
-  ctf31 text,
-  ctf32 text,
-  ctf33 myCustomType2
+create type my_custom_type3(
+  ct31 text,
+  ct32 text,
+  ct33 frozen<my_custom_type2>
 );
 
 """.trimIndent()
 val expectedDDLConcreteTable1 = """
-create table myTable_a(
-  myField4   text,
-  myField5   text,
-  myField6   frozen<mycustomtype3>,
-  myField1   text,
-  myField2   timestamp,
-  myField3   int,
-  frozen5   frozen<mycustomtype1>,
-  mySetField1   set<text>,
-  primary key((myField4), myField5)
+create table my_table_a(
+  my_field4   text,
+  my_field5   text,
+  my_field6   frozen<my_custom_type3>,
+  my_field1   text,
+  my_field2   timestamp,
+  my_field3   int,
+  frozen_field   frozen<my_custom_type1>,
+  my_set_field1   set<text>,
+  primary key((my_field4), my_field5)
 );
 
 """.trimIndent()
-val expectedJsonExample = """
-insert into myTable json '{
-  "myField1": "1",
-  "myField2": "2",
-  "myField6": {
-    "ctf31": "3",
-    "ctf32": "4",
-    "ctf33": {
-      "ctf21": "5",
-      "ctf22": "6",
-      "ctf23": {
-        "ctf11": "7",
-        "ctf12": "8"
+
+private const val jsonExample = """{
+  "my_field1": "1",
+  "my_field2": "2",
+  "my_field6": {
+    "ct31": "3",
+    "ct32": "4",
+    "ct33": {
+      "ct21": "5",
+      "ct22": "6",
+      "ct23": {
+        "ct11": "7",
+        "ct12": "8"
       }
     }
   },
-  "myField3": 9,
-  "myField4": "10",
-  "frozen5": {
-    "ctf11": "11",
-    "ctf12": "12"
+  "my_field3": 9,
+  "my_field4": "10",
+  "frozen_field": {
+    "ct11": "11",
+    "ct12": "12"
   },
-  "mySetField1": ["13","14","15","16"],
-  "myField5": {
-    "ctf21": "17",
-    "ctf22": "18",
-    "ctf23": {
-      "ctf11": "19",
-      "ctf12": "20"
+  "my_set_field1": ["13","14","15","16"],
+  "my_field5": {
+    "ct21": "17",
+    "ct22": "18",
+    "ct23": {
+      "ct11": "19",
+      "ct12": "20"
     }
   }
-}';
+}"""
+
+val expectedInsertJsonExample = """
+insert into my_table json '$jsonExample';
 """.trimIndent()
+
+fun main() {
+    val sb = StringBuilder()
+    (defaultTable.dependecies.reversed() + listOf<DDLAble>(defaultTable)).forEach {
+        it.printDDL(sb)
+    }
+    println(sb)
+}
